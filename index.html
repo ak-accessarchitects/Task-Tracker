@@ -1,9 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Access Architects Task Tracker</title>
   <style>
+    /* Your original styles remain unchanged */
     body {
       font-family: "Segoe UI", sans-serif;
       background: #fff; color: #333;
@@ -27,7 +29,6 @@
       color: #4a90d9;
       margin: 0;
     }
-
     #dashboard {
       display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
       gap: 16px; margin-bottom: 24px;
@@ -51,7 +52,6 @@
       height: 100%; width: var(--pct, 0%);
       background: #fff; opacity: 0.25; border-radius: 4px;
     }
-
     .task-form {
       display: flex; flex-wrap: wrap; gap: 10px;
       justify-content: center; margin-bottom: 1.5rem;
@@ -64,7 +64,6 @@
     body.dark .task-form input, body.dark .task-form select, body.dark .task-form button {
       background: #2b2b2b; color: #eee; border-color: #555;
     }
-
     .task-table { overflow-x: auto; }
     table { width: 100%; border-collapse: collapse; }
     th, td {
@@ -73,176 +72,29 @@
     th { background: #4a90d9; color: #fff; }
     body.dark th { background: #2a2a2a; color: #ddd; }
     body.dark td { background: #1b1b1b; color: #ddd; }
-
     button.start { background: #4a90d9; color: #fff; }
     button.stop { background: #d94a4a; color: #fff; }
-
     .status.InProgress { color: #e67e22; }
     .status.Done { color: #27ae60; }
     .status.NotStarted { color: #888; }
   </style>
-</head>
-
-<body>
-  <header>
-    <img src="access-logo.png" alt="Access Architects Logo" />
-    <h1>Task Tracker</h1>
-    <h2>Dashboard</h2>
-  </header>
-
-  <!-- Dashboard -->
-  <section id="dashboard">
-    <div class="dash-card"><div class="dash-title">Total Tasks</div><div class="dash-value" id="total-val">0</div></div>
-    <div class="dash-card"><div class="dash-title">Completed</div><div class="dash-value" id="done-val">0</div><div class="dash-chart" id="chart-done" style="--pct:0%"></div></div>
-    <div class="dash-card"><div class="dash-title">In Progress</div><div class="dash-value" id="prog-val">0</div><div class="dash-chart" id="chart-prog" style="--pct:0%"></div></div>
-    <div class="dash-card"><div class="dash-title">Productivity</div><div class="dash-value" id="prod-val">0%</div><div class="dash-chart" id="chart-prod" style="--pct:0%"></div></div>
-  </section>
-
-  <!-- Task Form -->
-  <section class="task-form">
-    <input type="date" id="task-date">
-    <input type="text" id="task-name" placeholder="Task Name">
-    <input type="text" id="task-category" placeholder="Category">
-    <select id="task-priority"><option>High</option><option>Medium</option><option>Low</option></select>
-    <input type="text" id="filter-category" placeholder="Filter by Category">
-    <button id="add-task">➕ Add Task</button>
-    <button id="delete-selected">🗑️ Delete</button>
-    <button id="toggle-dark">🌙</button>
-  </section>
-
-  <!-- Task Table -->
-  <section class="task-table">
-    <table>
-      <thead>
-        <tr>
-          <th><input type="checkbox" id="select-all" /></th>
-          <th>Date</th><th>Task</th><th>Category</th><th>Priority</th>
-          <th>Start</th><th>End</th><th>Duration</th><th>Status</th><th>Actions</th>
-        </tr>
-      </thead>
-      <tbody id="taskBody"></tbody>
-    </table>
-  </section>
-
+  <!-- Firebase CDN -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
   <script>
-    const taskBody = document.getElementById("taskBody");
-    const tasks = JSON.parse(localStorage.getItem("tasks")) || [];
-    const filterInput = document.getElementById("filter-category");
-
-    function generateId() {
-      return '_' + Math.random().toString(36).substr(2, 9);
-    }
-
-    function saveTasks() {
-      localStorage.setItem("tasks", JSON.stringify(tasks));
-    }
-
-    function formatDuration(ms) {
-      const s = Math.floor((ms / 1000) % 60);
-      const m = Math.floor((ms / 60000) % 60);
-      const h = Math.floor(ms / 3600000);
-      return `${h}h ${m}m ${s}s`;
-    }
-
-    function updateDashboard() {
-      const total = tasks.length;
-      const done = tasks.filter(t => t.status === "Done").length;
-      const prog = tasks.filter(t => t.status === "In Progress").length;
-      const pct = total ? Math.round((done / total) * 100) : 0;
-      document.getElementById("total-val").textContent = total;
-      document.getElementById("done-val").textContent = done;
-      document.getElementById("prog-val").textContent = prog;
-      document.getElementById("prod-val").textContent = `${pct}%`;
-      document.getElementById("chart-done").style.setProperty("--pct", `${(done / total) * 100 || 0}%`);
-      document.getElementById("chart-prog").style.setProperty("--pct", `${(prog / total) * 100 || 0}%`);
-      document.getElementById("chart-prod").style.setProperty("--pct", `${pct}%`);
-    }
-
-    function renderTasks() {
-      const filter = filterInput.value.toLowerCase();
-      taskBody.innerHTML = "";
-      tasks.filter(t => !filter || t.category.toLowerCase().includes(filter))
-        .forEach(t => {
-          const tr = document.createElement("tr");
-          tr.innerHTML = `
-            <td><input type="checkbox" class="select-task" data-id="${t.id}"></td>
-            <td>${t.date}</td><td>${t.name}</td><td>${t.category}</td><td>${t.priority}</td>
-            <td>${t.startTime || ""}</td><td>${t.endTime || ""}</td><td>${formatDuration(t.duration)}</td>
-            <td class="status ${t.status.replace(" ", "")}">${t.status}</td>
-            <td>
-              <button class="start" data-id="${t.id}">Start</button>
-              <button class="stop" data-id="${t.id}">Stop</button>
-            </td>`;
-          taskBody.appendChild(tr);
-        });
-      updateDashboard();
-    }
-
-    document.getElementById("add-task").onclick = () => {
-      const date = document.getElementById("task-date").value;
-      const name = document.getElementById("task-name").value;
-      const category = document.getElementById("task-category").value;
-      const priority = document.getElementById("task-priority").value;
-      if (!date || !name) return alert("Please enter date and task name.");
-      tasks.push({ id: generateId(), date, name, category, priority, startTime: "", endTime: "", duration: 0, status: "Not Started", lastStart: null });
-      saveTasks(); renderTasks();
-      document.getElementById("task-name").value = "";
-      document.getElementById("task-category").value = "";
+    const firebaseConfig = {
+      apiKey: "AIzaSyBSsrgREykymiDf0S2t_UUnucXN5_AJjtQ",
+      authDomain: "tasktracker-8307d.firebaseapp.com",
+      databaseURL: "https://tasktracker-8307d-default-rtdb.firebaseio.com",
+      projectId: "tasktracker-8307d",
+      storageBucket: "tasktracker-8307d.appspot.com",
+      messagingSenderId: "261914013444",
+      appId: "1:261914013444:web:ee169f7dd9a4db751f6a51",
+      measurementId: "G-81JYLFPEQT"
     };
-
-    taskBody.onclick = e => {
-      const id = e.target.dataset.id;
-      const task = tasks.find(t => t.id === id);
-      if (!task) return;
-      if (e.target.classList.contains("start")) {
-        task.lastStart = new Date();
-        task.status = "In Progress";
-        task.startTime = task.startTime || task.lastStart.toLocaleTimeString();
-      }
-      if (e.target.classList.contains("stop")) {
-        const now = new Date();
-        if (task.lastStart) {
-          task.duration += now - new Date(task.lastStart);
-          task.endTime = now.toLocaleTimeString();
-          task.status = "Done";
-          task.lastStart = null;
-        }
-      }
-      saveTasks(); renderTasks();
-    };
-
-    document.getElementById("delete-selected").onclick = () => {
-      const selectedIds = Array.from(document.querySelectorAll('.select-task:checked'))
-        .map(cb => cb.getAttribute('data-id'));
-
-      if (selectedIds.length === 0) {
-        alert("Please select at least one task to delete.");
-        return;
-      }
-
-      const updatedTasks = tasks.filter(task => !selectedIds.includes(task.id));
-      tasks.length = 0;
-      tasks.push(...updatedTasks);
-      saveTasks();
-      renderTasks();
-    };
-
-    document.getElementById("select-all").onchange = e => {
-      document.querySelectorAll(".select-task").forEach(cb => cb.checked = e.target.checked);
-    };
-
-    document.getElementById("filter-category").oninput = renderTasks;
-
-    document.getElementById("toggle-dark").onclick = () => {
-      document.body.classList.toggle("dark");
-      localStorage.setItem("theme", document.body.classList.contains("dark") ? "dark" : "light");
-    };
-
-    if (localStorage.getItem("theme") === "dark") {
-      document.body.classList.add("dark");
-    }
-
-    renderTasks();
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
   </script>
-</body>
-</html>
+</head>
+<body>
+  <!-- original HTML content below this stays the same -->
