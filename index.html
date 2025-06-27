@@ -1,11 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Access Architects Task Tracker</title>
   <style>
-    /* your original CSS remains unchanged */
     body {
       font-family: "Segoe UI", sans-serif;
       background: #fff; color: #333;
@@ -29,6 +27,7 @@
       color: #4a90d9;
       margin: 0;
     }
+
     #dashboard {
       display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
       gap: 16px; margin-bottom: 24px;
@@ -52,6 +51,7 @@
       height: 100%; width: var(--pct, 0%);
       background: #fff; opacity: 0.25; border-radius: 4px;
     }
+
     .task-form {
       display: flex; flex-wrap: wrap; gap: 10px;
       justify-content: center; margin-bottom: 1.5rem;
@@ -64,6 +64,7 @@
     body.dark .task-form input, body.dark .task-form select, body.dark .task-form button {
       background: #2b2b2b; color: #eee; border-color: #555;
     }
+
     .task-table { overflow-x: auto; }
     table { width: 100%; border-collapse: collapse; }
     th, td {
@@ -72,25 +73,32 @@
     th { background: #4a90d9; color: #fff; }
     body.dark th { background: #2a2a2a; color: #ddd; }
     body.dark td { background: #1b1b1b; color: #ddd; }
+
     button.start { background: #4a90d9; color: #fff; }
     button.stop { background: #d94a4a; color: #fff; }
+
     .status.InProgress { color: #e67e22; }
     .status.Done { color: #27ae60; }
     .status.NotStarted { color: #888; }
   </style>
 </head>
+
 <body>
   <header>
     <img src="access-logo.png" alt="Access Architects Logo" />
     <h1>Task Tracker</h1>
     <h2>Dashboard</h2>
   </header>
+
+  <!-- Dashboard -->
   <section id="dashboard">
     <div class="dash-card"><div class="dash-title">Total Tasks</div><div class="dash-value" id="total-val">0</div></div>
     <div class="dash-card"><div class="dash-title">Completed</div><div class="dash-value" id="done-val">0</div><div class="dash-chart" id="chart-done" style="--pct:0%"></div></div>
     <div class="dash-card"><div class="dash-title">In Progress</div><div class="dash-value" id="prog-val">0</div><div class="dash-chart" id="chart-prog" style="--pct:0%"></div></div>
     <div class="dash-card"><div class="dash-title">Productivity</div><div class="dash-value" id="prod-val">0%</div><div class="dash-chart" id="chart-prod" style="--pct:0%"></div></div>
   </section>
+
+  <!-- Task Form -->
   <section class="task-form">
     <input type="date" id="task-date">
     <input type="text" id="task-name" placeholder="Task Name">
@@ -101,6 +109,8 @@
     <button id="delete-selected">🗑️ Delete</button>
     <button id="toggle-dark">🌙</button>
   </section>
+
+  <!-- Task Table -->
   <section class="task-table">
     <table>
       <thead>
@@ -114,33 +124,17 @@
     </table>
   </section>
 
-  <!-- Firebase CDN Scripts -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
   <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyBSsrgREykymiDf0S2t_UUnucXN5_AJjtQ",
-      authDomain: "tasktracker-8307d.firebaseapp.com",
-      databaseURL: "https://tasktracker-8307d-default-rtdb.firebaseio.com",
-      projectId: "tasktracker-8307d",
-      storageBucket: "tasktracker-8307d.appspot.com",
-      messagingSenderId: "261914013444",
-      appId: "1:261914013444:web:ee169f7dd9a4db751f6a51",
-      measurementId: "G-81JYLFPEQT"
-    };
-
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
     const taskBody = document.getElementById("taskBody");
+    const tasks = JSON.parse(localStorage.getItem("tasks")) || [];
     const filterInput = document.getElementById("filter-category");
-    let tasks = [];
 
     function generateId() {
       return '_' + Math.random().toString(36).substr(2, 9);
     }
 
     function saveTasks() {
-      db.ref("tasks").set(tasks);
+      localStorage.setItem("tasks", JSON.stringify(tasks));
     }
 
     function formatDuration(ms) {
@@ -218,8 +212,17 @@
     };
 
     document.getElementById("delete-selected").onclick = () => {
-      const selectedIds = Array.from(document.querySelectorAll('.select-task:checked')).map(cb => cb.dataset.id);
-      tasks = tasks.filter(task => !selectedIds.includes(task.id));
+      const selectedIds = Array.from(document.querySelectorAll('.select-task:checked'))
+        .map(cb => cb.getAttribute('data-id'));
+
+      if (selectedIds.length === 0) {
+        alert("Please select at least one task to delete.");
+        return;
+      }
+
+      const updatedTasks = tasks.filter(task => !selectedIds.includes(task.id));
+      tasks.length = 0;
+      tasks.push(...updatedTasks);
       saveTasks();
       renderTasks();
     };
@@ -239,13 +242,7 @@
       document.body.classList.add("dark");
     }
 
-    firebase.database().ref("tasks").on("value", snapshot => {
-      const data = snapshot.val();
-      if (data) {
-        tasks = data;
-        renderTasks();
-      }
-    });
+    renderTasks();
   </script>
 </body>
 </html>
