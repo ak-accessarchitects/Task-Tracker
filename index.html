@@ -1,10 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Access Architects Task Tracker</title>
   <style>
-    /* CSS remains unchanged */
+    /* [Your existing CSS here remains unchanged] */
   </style>
 </head>
 <body>
@@ -14,7 +15,10 @@
     <h2>Dashboard</h2>
   </header>
 
-  <!-- Firebase SDK + App Initialization -->
+  <section id="dashboard"></section>
+  <section class="task-form"></section>
+  <section class="task-table"></section>
+
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
     import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-database.js";
@@ -36,124 +40,126 @@
     const db = getDatabase(app);
     const taskRef = ref(db, 'tasks');
 
-    const taskBody = document.getElementById("taskBody");
-    const filterInput = document.getElementById("filter-category");
-    let tasks = [];
+    document.addEventListener("DOMContentLoaded", () => {
+      const taskBody = document.getElementById("taskBody");
+      const filterInput = document.getElementById("filter-category");
+      let tasks = [];
 
-    function generateId() {
-      return '_' + Math.random().toString(36).substr(2, 9);
-    }
-
-    function saveTasks() {
-      set(taskRef, tasks);
-    }
-
-    function formatDuration(ms) {
-      const s = Math.floor((ms / 1000) % 60);
-      const m = Math.floor((ms / 60000) % 60);
-      const h = Math.floor(ms / 3600000);
-      return `${h}h ${m}m ${s}s`;
-    }
-
-    function updateDashboard() {
-      const total = tasks.length;
-      const done = tasks.filter(t => t.status === "Done").length;
-      const prog = tasks.filter(t => t.status === "In Progress").length;
-      const pct = total ? Math.round((done / total) * 100) : 0;
-      document.getElementById("total-val").textContent = total;
-      document.getElementById("done-val").textContent = done;
-      document.getElementById("prog-val").textContent = prog;
-      document.getElementById("prod-val").textContent = `${pct}%`;
-      document.getElementById("chart-done").style.setProperty("--pct", `${(done / total) * 100 || 0}%`);
-      document.getElementById("chart-prog").style.setProperty("--pct", `${(prog / total) * 100 || 0}%`);
-      document.getElementById("chart-prod").style.setProperty("--pct", `${pct}%`);
-    }
-
-    function renderTasks() {
-      const filter = filterInput.value.toLowerCase();
-      taskBody.innerHTML = "";
-      tasks.filter(t => !filter || t.category.toLowerCase().includes(filter))
-        .forEach(t => {
-          const tr = document.createElement("tr");
-          tr.innerHTML = `
-            <td><input type="checkbox" class="select-task" data-id="${t.id}"></td>
-            <td>${t.date}</td><td>${t.name}</td><td>${t.category}</td><td>${t.priority}</td>
-            <td>${t.startTime || ""}</td><td>${t.endTime || ""}</td><td>${formatDuration(t.duration)}</td>
-            <td class="status ${t.status.replace(" ", "")}">${t.status}</td>
-            <td>
-              <button class="start" data-id="${t.id}">Start</button>
-              <button class="stop" data-id="${t.id}">Stop</button>
-            </td>`;
-          taskBody.appendChild(tr);
-        });
-      updateDashboard();
-    }
-
-    document.getElementById("add-task").onclick = () => {
-      const date = document.getElementById("task-date").value;
-      const name = document.getElementById("task-name").value;
-      const category = document.getElementById("task-category").value;
-      const priority = document.getElementById("task-priority").value;
-      if (!date || !name) return alert("Please enter date and task name.");
-      tasks.push({ id: generateId(), date, name, category, priority, startTime: "", endTime: "", duration: 0, status: "Not Started", lastStart: null });
-      saveTasks(); renderTasks();
-      document.getElementById("task-name").value = "";
-      document.getElementById("task-category").value = "";
-    };
-
-    taskBody.onclick = e => {
-      const id = e.target.dataset.id;
-      const task = tasks.find(t => t.id === id);
-      if (!task) return;
-      if (e.target.classList.contains("start")) {
-        task.lastStart = new Date();
-        task.status = "In Progress";
-        task.startTime = task.startTime || task.lastStart.toLocaleTimeString();
+      function generateId() {
+        return '_' + Math.random().toString(36).substr(2, 9);
       }
-      if (e.target.classList.contains("stop")) {
-        const now = new Date();
-        if (task.lastStart) {
-          task.duration += now - new Date(task.lastStart);
-          task.endTime = now.toLocaleTimeString();
-          task.status = "Done";
-          task.lastStart = null;
+
+      function saveTasks() {
+        set(taskRef, tasks);
+      }
+
+      function formatDuration(ms) {
+        const s = Math.floor((ms / 1000) % 60);
+        const m = Math.floor((ms / 60000) % 60);
+        const h = Math.floor(ms / 3600000);
+        return `${h}h ${m}m ${s}s`;
+      }
+
+      function updateDashboard() {
+        const total = tasks.length;
+        const done = tasks.filter(t => t.status === "Done").length;
+        const prog = tasks.filter(t => t.status === "In Progress").length;
+        const pct = total ? Math.round((done / total) * 100) : 0;
+        document.getElementById("total-val").textContent = total;
+        document.getElementById("done-val").textContent = done;
+        document.getElementById("prog-val").textContent = prog;
+        document.getElementById("prod-val").textContent = `${pct}%`;
+        document.getElementById("chart-done").style.setProperty("--pct", `${(done / total) * 100 || 0}%`);
+        document.getElementById("chart-prog").style.setProperty("--pct", `${(prog / total) * 100 || 0}%`);
+        document.getElementById("chart-prod").style.setProperty("--pct", `${pct}%`);
+      }
+
+      function renderTasks() {
+        const filter = filterInput.value.toLowerCase();
+        taskBody.innerHTML = "";
+        tasks.filter(t => !filter || t.category.toLowerCase().includes(filter))
+          .forEach(t => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+              <td><input type="checkbox" class="select-task" data-id="${t.id}"></td>
+              <td>${t.date}</td><td>${t.name}</td><td>${t.category}</td><td>${t.priority}</td>
+              <td>${t.startTime || ""}</td><td>${t.endTime || ""}</td><td>${formatDuration(t.duration)}</td>
+              <td class="status ${t.status.replace(" ", "")}">${t.status}</td>
+              <td>
+                <button class="start" data-id="${t.id}">Start</button>
+                <button class="stop" data-id="${t.id}">Stop</button>
+              </td>`;
+            taskBody.appendChild(tr);
+          });
+        updateDashboard();
+      }
+
+      document.getElementById("add-task").onclick = () => {
+        const date = document.getElementById("task-date").value;
+        const name = document.getElementById("task-name").value;
+        const category = document.getElementById("task-category").value;
+        const priority = document.getElementById("task-priority").value;
+        if (!date || !name) return alert("Please enter date and task name.");
+        tasks.push({ id: generateId(), date, name, category, priority, startTime: "", endTime: "", duration: 0, status: "Not Started", lastStart: null });
+        saveTasks(); renderTasks();
+        document.getElementById("task-name").value = "";
+        document.getElementById("task-category").value = "";
+      };
+
+      taskBody.onclick = e => {
+        const id = e.target.dataset.id;
+        const task = tasks.find(t => t.id === id);
+        if (!task) return;
+        if (e.target.classList.contains("start")) {
+          task.lastStart = new Date();
+          task.status = "In Progress";
+          task.startTime = task.startTime || task.lastStart.toLocaleTimeString();
         }
+        if (e.target.classList.contains("stop")) {
+          const now = new Date();
+          if (task.lastStart) {
+            task.duration += now - new Date(task.lastStart);
+            task.endTime = now.toLocaleTimeString();
+            task.status = "Done";
+            task.lastStart = null;
+          }
+        }
+        saveTasks(); renderTasks();
+      };
+
+      document.getElementById("delete-selected").onclick = () => {
+        const selectedIds = Array.from(document.querySelectorAll('.select-task:checked'))
+          .map(cb => cb.getAttribute('data-id'));
+        if (selectedIds.length === 0) {
+          alert("Please select at least one task to delete.");
+          return;
+        }
+        tasks = tasks.filter(task => !selectedIds.includes(task.id));
+        saveTasks(); renderTasks();
+      };
+
+      document.getElementById("select-all").onchange = e => {
+        document.querySelectorAll(".select-task").forEach(cb => cb.checked = e.target.checked);
+      };
+
+      document.getElementById("filter-category").oninput = renderTasks;
+
+      document.getElementById("toggle-dark").onclick = () => {
+        document.body.classList.toggle("dark");
+        localStorage.setItem("theme", document.body.classList.contains("dark") ? "dark" : "light");
+      };
+
+      if (localStorage.getItem("theme") === "dark") {
+        document.body.classList.add("dark");
       }
-      saveTasks(); renderTasks();
-    };
 
-    document.getElementById("delete-selected").onclick = () => {
-      const selectedIds = Array.from(document.querySelectorAll('.select-task:checked'))
-        .map(cb => cb.getAttribute('data-id'));
-      if (selectedIds.length === 0) {
-        alert("Please select at least one task to delete.");
-        return;
-      }
-      tasks = tasks.filter(task => !selectedIds.includes(task.id));
-      saveTasks(); renderTasks();
-    };
-
-    document.getElementById("select-all").onchange = e => {
-      document.querySelectorAll(".select-task").forEach(cb => cb.checked = e.target.checked);
-    };
-
-    document.getElementById("filter-category").oninput = renderTasks;
-
-    document.getElementById("toggle-dark").onclick = () => {
-      document.body.classList.toggle("dark");
-      localStorage.setItem("theme", document.body.classList.contains("dark") ? "dark" : "light");
-    };
-
-    if (localStorage.getItem("theme") === "dark") {
-      document.body.classList.add("dark");
-    }
-
-    onValue(taskRef, (snapshot) => {
-      const data = snapshot.val();
-      if (data) {
-        tasks = data;
-        renderTasks();
-      }
+      onValue(taskRef, (snapshot) => {
+        const data = snapshot.val();
+        if (data) {
+          tasks = data;
+          renderTasks();
+        }
+      });
     });
   </script>
 </body>
