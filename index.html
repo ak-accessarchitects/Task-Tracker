@@ -245,4 +245,28 @@
     renderTasks();
   </script>
 </body>
+  <script type="module">
+  // Import the functions you need from the SDKs you need
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-analytics.js";
+  // TODO: Add SDKs for Firebase products that you want to use
+  // https://firebase.google.com/docs/web/setup#available-libraries
+
+  // Your web app's Firebase configuration
+  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+  const firebaseConfig = {
+    apiKey: "AIzaSyDrUVCwM8CTAhq5sDpUl1E6GFpx5PDtRVc",
+    authDomain: "accessarchitectstracker.firebaseapp.com",
+    databaseURL: "https://accessarchitectstracker-default-rtdb.firebaseio.com",
+    projectId: "accessarchitectstracker",
+    storageBucket: "accessarchitectstracker.firebasestorage.app",
+    messagingSenderId: "1084004518817",
+    appId: "1:1084004518817:web:42a931b85ed036035959e0",
+    measurementId: "G-S2E6Z31WHM"
+  };
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
+</script>
 </html>
